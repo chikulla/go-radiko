@@ -8,7 +8,7 @@ import (
 )
 
 func readTestData(fileName string) *os.File {
-	const testDir = "github.com/yyoshiki41/go-radiko/testdata"
+	const testDir = "github.com/chikulla/go-radiko/testdata"
 
 	GOPATH := os.Getenv("GOPATH")
 	f, err := os.Open(filepath.Join(GOPATH, "src", testDir, fileName))

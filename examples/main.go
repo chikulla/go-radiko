@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/yyoshiki41/go-radiko"
+	"github.com/chikulla/go-radiko"
 )
 
 func main() {
