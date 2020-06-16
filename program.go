@@ -69,13 +69,47 @@ func (c *Client) GetRadioStations(ctx context.Context) (RadioStations, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
+
 	var d radioStationsData
 	if err = decodeRadioStationsData(resp.Body, &d); err != nil {
 		return nil, err
 	}
 	return d.radioStations(), nil
+}
+
+func (c *Client) GetProgramsByStationSchedule(ctx context.Context, stationId string, date time.Time) ([]Prog, error) {
+	apiEndpoint := path.Join(apiV3, "program/station/date", util.ProgramsDate(date), fmt.Sprintf("%s.xml", stationId))
+	req, err := c.newRequest(ctx, "GET", apiEndpoint, &Params{})
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var d stationsData
+	if err = decodeStationsData(resp.Body, &d); err != nil {
+		return nil, err
+	}
+	return d.programs(), nil
+}
+
+func (c *Client) GetProgramsByStation(ctx context.Context, stationId string, date time.Time) ([]Prog, error) {
+	// TODO: Make it routine
+	todays, err := c.GetProgramsByStationSchedule(ctx, stationId, date)
+	if err != nil {
+		return nil, err
+	}
+	yesterday := date.AddDate(0, 0, -1)
+	yesterdays, err := c.GetProgramsByStationSchedule(ctx, stationId, yesterday)
+	if err != nil {
+		return nil, err
+	}
+	return append(yesterdays, todays...), nil
 }
 
 // GetStations returns the program's meta-info.
@@ -214,6 +248,10 @@ type stationsData struct {
 // stations returns Stations which is a response struct for client's users.
 func (d *stationsData) stations() Stations {
 	return d.XMLStations.Stations
+}
+
+func (d *stationsData) programs() []Prog {
+	return d.XMLStations.Stations[0].Progs.Progs
 }
 
 // decodeStationsData parses the XML-encoded data and stores the result.
