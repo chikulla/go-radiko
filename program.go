@@ -78,7 +78,7 @@ func (c *Client) GetRadioStations(ctx context.Context) (RadioStations, error) {
 	return d.radioStations(), nil
 }
 
-func (c *Client) GetProgramsByStationSchedule(ctx context.Context, stationId string, date time.Time) ([]Prog, error) {
+func (c *Client) GetProgramsByStation(ctx context.Context, stationId string, date time.Time) ([]Prog, error) {
 	apiEndpoint := path.Join(apiV3, "program/station/date", util.ProgramsDate(date), fmt.Sprintf("%s.xml", stationId))
 	req, err := c.newRequest(ctx, "GET", apiEndpoint, &Params{})
 	if err != nil {
@@ -96,20 +96,6 @@ func (c *Client) GetProgramsByStationSchedule(ctx context.Context, stationId str
 		return nil, err
 	}
 	return d.programs(), nil
-}
-
-func (c *Client) GetProgramsByStation(ctx context.Context, stationId string, date time.Time) ([]Prog, error) {
-	// TODO: Make it routine
-	todays, err := c.GetProgramsByStationSchedule(ctx, stationId, date)
-	if err != nil {
-		return nil, err
-	}
-	yesterday := date.AddDate(0, 0, -1)
-	yesterdays, err := c.GetProgramsByStationSchedule(ctx, stationId, yesterday)
-	if err != nil {
-		return nil, err
-	}
-	return append(yesterdays, todays...), nil
 }
 
 // GetStations returns the program's meta-info.
