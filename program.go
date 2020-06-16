@@ -24,6 +24,13 @@ type Station struct {
 	Progs Progs  `xml:"progs,omitempty"`
 }
 
+type RadioStations []RadioStation
+
+type RadioStation struct {
+	ID   string `xml:"id"`
+	Name string `xml:"name"`
+}
+
 // Scd is a struct.
 type Scd struct {
 	Progs Progs `xml:"progs"`
@@ -48,6 +55,27 @@ type Prog struct {
 	Pfm      string `xml:"pfm"`
 	Info     string `xml:"info"`
 	URL      string `xml:"url"`
+}
+
+func (c *Client) GetRadioStations(ctx context.Context) (RadioStations, error) {
+	apiEndpoint := path.Join(apiV3, "station/list", fmt.Sprintf("%s.xml", c.AreaID()))
+
+	req, err := c.newRequest(ctx, "GET", apiEndpoint, &Params{})
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	var d radioStationsData
+	if err = decodeRadioStationsData(resp.Body, &d); err != nil {
+		return nil, err
+	}
+	return d.radioStations(), nil
 }
 
 // GetStations returns the program's meta-info.
@@ -152,6 +180,26 @@ func (c *Client) GetWeeklyPrograms(ctx context.Context, stationID string) (Stati
 		return nil, err
 	}
 	return d.stations(), nil
+}
+
+type radioStationsData struct {
+	XMLName       xml.Name      `xml:"stations"`
+	RadioStations RadioStations `xml:"station"`
+}
+
+func (d *radioStationsData) radioStations() RadioStations {
+	return d.RadioStations
+}
+
+func decodeRadioStationsData(input io.Reader, stations *radioStationsData) error {
+	b, err := ioutil.ReadAll(input)
+	if err != nil {
+		return err
+	}
+	if err = xml.Unmarshal(b, stations); err != nil {
+		return err
+	}
+	return nil
 }
 
 // stationsData includes a response struct for client's users.
