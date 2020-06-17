@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/chikulla/go-radiko/internal/util"
@@ -96,6 +97,33 @@ func (c *Client) GetProgramsByStation(ctx context.Context, stationId string, dat
 		return nil, err
 	}
 	return d.programs(), nil
+}
+
+func (c *Client) FindProgramByStation(ctx context.Context, stationId string, date time.Time) (*Prog, error) {
+	progs, err := c.GetProgramsByStation(ctx, stationId, date)
+	if err != nil {
+		return nil, err
+	}
+
+	target, err := strconv.Atoi(util.Datetime(date))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, prog := range progs {
+		from, err := strconv.Atoi(prog.Ft)
+		if err != nil {
+			return nil, err
+		}
+		to, err := strconv.Atoi(prog.To)
+		if err != nil {
+			return nil, err
+		}
+		if from <= target && to > target {
+			return &prog, nil
+		}
+	}
+	return nil, errors.New("CAN'T FIND THE PROGRAM")
 }
 
 // GetStations returns the program's meta-info.

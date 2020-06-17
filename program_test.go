@@ -10,6 +10,26 @@ import (
 	"github.com/chikulla/go-radiko/internal/util"
 )
 
+func client() (*Client, error) {
+	c, err := New("")
+	c.SetAreaID(areaIDTokyo)
+	return c, err
+}
+
+func TestClient_FindProgramByStation(t *testing.T) {
+	c, err := client()
+	if err != nil {
+		t.Error(err)
+	}
+	prog, err := c.FindProgramByStation(context.Background(), "TBS", time.Now())
+	if err != nil {
+		t.Error(err)
+	}
+	if prog == nil {
+		t.Error("CAN'T FIND THE MATCHED PROGRAM")
+	}
+}
+
 func TestGetStations(t *testing.T) {
 	if isOutsideJP() {
 		t.Skip("Skipping test in limited mode.")
